@@ -28,5 +28,3 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
     console.log(`listening from http://localhost:${port}`)
 })
-
-// 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
