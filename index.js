@@ -106,7 +106,7 @@ async function run() {
         })
         // delete Order
         app.delete('/orders/:orderId', async (req, res) => {
-            const id = req.params.productId;
+            const id = req.params.orderId;
             const query = { _id: ObjectId(id)}
             const result = await orderCollection.deleteOne(query);
             res.json(result)
