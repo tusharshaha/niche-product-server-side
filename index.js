@@ -80,9 +80,9 @@ async function run() {
               res.send(result)
         })
         // upate status
-        app.put('/orders/:orderId', async (req, res) => {
-            const id = req.params.orderId;
-            const filter = { _id: ObjectId(id) };
+        app.put('/orders/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id)};
             const options = { upsert: true };
             const updateDoc = {
                 $set: {
