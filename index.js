@@ -80,7 +80,7 @@ async function run() {
               res.send(result)
         })
         // upate status
-        app.put('/order/:id', async (req, res) => {
+        app.put('/orders/:id', async (req, res) => {
             const id = req.params.id;
             console.log(id);
             const filter = { _id: ObjectId(id)};
