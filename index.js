@@ -1,16 +1,34 @@
 const express = require('express');
 const { MongoClient } = require('mongodb');
 const cors = require('cors');
+const admin = require("firebase-admin");
 const port = process.env.PORT || 5000;
 require('dotenv').config()
 const ObjectId = require('mongodb').ObjectId
-const app= express()
+const app = express()
 app.use(cors())
 app.use(express.json())
 
+const serviceAccount = require("./kidsToy-shop-firebase-adminsdk.json");
+
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+});
 const uri = `mongodb+srv://myFirstMogo:${process.env.DB_PASS}@cluster0.2xl13.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
+async function verifyToken(req, res, next) {
+    if (req.headers?.authorization?.startsWith('Bearer ')) {
+        const token = req.headers?.authorization?.split(' ')[1];
+        try {
+            const decodedUser = await admin.auth().verifyIdToken(token);
+            req.decodedEmail = decodedUser.email;
+        } catch {
+
+        }
+    }
+    next();
+}
 async function run() {
     try {
         await client.connect();
@@ -21,13 +39,13 @@ async function run() {
         const reviewsCollection = database.collection("reviews");
 
         // save user to database
-        app.post('/users',async(req,res)=>{
+        app.post('/users', async (req, res) => {
             const user = await userCollection.insertOne(req.body);
             res.json(user)
         })
         // get single user
-        app.get('/checkadmin/:email',async(req,res)=>{
-            const query = { email:req.params.email};
+        app.get('/checkadmin/:email', async (req, res) => {
+            const query = { email: req.params.email };
             const result = await userCollection.findOne(query);
             res.send(result)
         })
@@ -44,8 +62,8 @@ async function run() {
             const reviews = await reviewsCollection.insertOne(review);
             res.json(reviews)
         })
-         // post order
-         app.post('/myOrder',async(req,res)=>{
+        // post order
+        app.post('/myOrder', async (req, res) => {
             const order = await orderCollection.insertOne(req.body);
             res.json(order)
         })
@@ -56,7 +74,7 @@ async function run() {
             res.send(products)
         })
         // get all review
-        app.get('/reviews', async(req,res)=>{
+        app.get('/reviews', async (req, res) => {
             const reviews = await reviewsCollection.find({}).toArray();
             res.send(reviews)
         })
@@ -68,47 +86,53 @@ async function run() {
             res.send(product)
         })
         // get all order
-        app.get('/allOrder',async(req,res)=>{
+        app.get('/allOrder', async (req, res) => {
             const result = await orderCollection.find({}).toArray()
             res.send(result)
         })
         // get my order
-        app.get('/myOrder/:email',async(req,res)=>{
+        app.get('/myOrder/:email', async (req, res) => {
             const result = await orderCollection.find({
                 userEmail: req.params.email,
-              }).toArray();
-              res.send(result)
+            }).toArray();
+            res.send(result)
         })
         // upate status
         app.put('/orders/:id', async (req, res) => {
             const id = req.params.id;
             console.log(id);
-            const filter = { _id: ObjectId(id)};
+            const filter = { _id: ObjectId(id) };
             const options = { upsert: true };
             const updateDoc = {
                 $set: {
-                    status:'Shipped'
+                    status: 'Shipped'
                 },
             };
             const result = await orderCollection.updateOne(filter, updateDoc, options);
             res.json(result)
         })
         // make admin
-        app.put('/users/:admin',async(req,res)=>{
+        app.put('/users/:admin', verifyToken, async (req, res) => {
             const email = req.params.admin;
-            const filter = {email:email}
-            const updateDoc = {
-                $set: {
-                    role:'admin'
-                },
-            };
-            const result = await userCollection.updateOne(filter, updateDoc);
-            res.json(result)
+            const requester = req.decodedEmail;
+            if (requester) {
+                const requesterAccount = await userCollection.findOne({ email: requester });
+                if (requesterAccount.role === 'admin') {
+                    const filter = { email: email }
+                    const updateDoc = {
+                        $set: {
+                            role: 'admin'
+                        },
+                    };
+                    const result = await userCollection.updateOne(filter, updateDoc);
+                    res.json(result)
+                }
+            }else{res.status(403).json({message:"you can't make admit request"})}
         })
         // delete Order
         app.delete('/orders/:orderId', async (req, res) => {
             const id = req.params.orderId;
-            const query = { _id: ObjectId(id)}
+            const query = { _id: ObjectId(id) }
             const result = await orderCollection.deleteOne(query);
             res.json(result)
         })
