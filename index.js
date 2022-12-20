@@ -9,12 +9,19 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
 
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-});
-
+try {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
+    });
+} catch (error) {
+    if (error instanceof SyntaxError) {
+        console.error('Invalid JSON:', error.message);
+    } else {
+        throw error;
+    }
+}
 const uri = `mongodb+srv://myFirstMogo:${process.env.DB_PASS}@cluster0.2xl13.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
@@ -127,7 +134,7 @@ async function run() {
                     const result = await userCollection.updateOne(filter, updateDoc);
                     res.json(result)
                 }
-            }else{res.status(403).json({message:"you can't make admit request"})}
+            } else { res.status(403).json({ message: "you can't make admit request" }) }
         })
         // delete Order
         app.delete('/orders/:orderId', async (req, res) => {
