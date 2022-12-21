@@ -2,7 +2,8 @@ const express = require('express');
 const { MongoClient } = require('mongodb');
 const cors = require('cors');
 const admin = require("firebase-admin");
-const port = process.env.PORT || 5000;
+const { service_account } = require('./kidsToy-shop-firebase-adminsdk');
+const port = process.env.PORT || 8080;
 require('dotenv').config()
 const ObjectId = require('mongodb').ObjectId
 const app = express()
@@ -11,18 +12,13 @@ app.use(express.json())
 
 
 try {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
     admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
+        credential: admin.credential.cert(service_account)
     });
 } catch (error) {
-    if (error instanceof SyntaxError) {
-        console.error('Invalid JSON:', error.message);
-    } else {
-        throw error;
-    }
+    console.log(error)
 }
-const uri = `mongodb+srv://myFirstMogo:${process.env.DB_PASS}@cluster0.2xl13.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.2xl13.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
 async function verifyToken(req, res, next) {
