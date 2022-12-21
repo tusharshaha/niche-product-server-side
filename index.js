@@ -2,8 +2,7 @@ const express = require('express');
 const { MongoClient } = require('mongodb');
 const cors = require('cors');
 const admin = require("firebase-admin");
-const { service_account } = require('./kidsToy-shop-firebase-adminsdk');
-const port = process.env.PORT || 8080;
+const port = process.env.PORT || 5500;
 require('dotenv').config()
 const ObjectId = require('mongodb').ObjectId
 const app = express()
@@ -12,8 +11,9 @@ app.use(express.json())
 
 
 try {
+    const account = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
     admin.initializeApp({
-        credential: admin.credential.cert(service_account)
+        credential: admin.credential.cert(account)
     });
 } catch (error) {
     console.log(error)
